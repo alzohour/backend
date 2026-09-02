@@ -36,8 +36,23 @@ namespace Backend
             // 1. Enables default file mapping (e.g. '/' automatically maps to '/index.html' in wwwroot)
             app.UseDefaultFiles();
 
-            // 2. Enables serving static files (CSS, JS, Images, HTML) from wwwroot folder
-            app.UseStaticFiles();
+            // 2. Enables serving static files (CSS, JS, Images, HTML) from wwwroot folder with optimal caching
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                OnPrepareResponse = ctx =>
+                {
+                    var path = ctx.File.PhysicalPath ?? "";
+                    // Cache Next.js hashed assets, WebP images, fonts, and PNGs for 1 year immutable
+                    if (path.Contains("_next") || path.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".woff2", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000,immutable");
+                    }
+                    else
+                    {
+                        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=86400");
+                    }
+                }
+            });
 
             app.UseAuthorization();
 
