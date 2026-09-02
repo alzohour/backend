@@ -1,4 +1,3 @@
-
 namespace Backend
 {
     public class Program
@@ -8,10 +7,19 @@ namespace Backend
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
+
+            // Enable CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
 
             var app = builder.Build();
 
@@ -23,10 +31,21 @@ namespace Backend
 
             app.UseHttpsRedirection();
 
+            app.UseCors("AllowAll");
+
+            // 1. Enables default file mapping (e.g. '/' automatically maps to '/index.html' in wwwroot)
+            app.UseDefaultFiles();
+
+            // 2. Enables serving static files (CSS, JS, Images, HTML) from wwwroot folder
+            app.UseStaticFiles();
+
             app.UseAuthorization();
 
-
+            // 3. API Controllers mapping (/api/...)
             app.MapControllers();
+
+            // 4. SPA Fallback: Any route not handled by API or static files will serve index.html
+            app.MapFallbackToFile("index.html");
 
             app.Run();
         }
